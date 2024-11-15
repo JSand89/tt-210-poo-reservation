@@ -1,32 +1,46 @@
 import { Request, Response, NextFunction } from "express";
-import { Customer } from "../models/customer";
-import { DineInReservation } from "../models/dineInReservation";
-import { Table } from "../models/table";
-
-let reservations: DineInReservation[] = []
-let nextId:number = 1
-
-
-export const createReservation = (req:Request,res:Response,next:NextFunction):void=>{
+import Customer from "../models/customer";
+import Table from "../models/table";
+import Reservation from "../models/reservation";
+export const createReservation = async(req:Request,res:Response,next:NextFunction):Promise<void>=>{
     try {
-        const {name,phoneNumber, dateTime, numberOfGuest, tableNumber} = req.body
-        const customer = new Customer(name,phoneNumber)
-        const table = new Table(tableNumber,numberOfGuest)
-        if(!table.getIsAvailable()){
-            res.status(400).json({message:"Table is not available"})
+        const {name, phoneNumber, dateTime, numberOfGuest, tableNumber} = req.body
+        const table = await Table.findOne({tableNumber,isAvailable:true})
+        if(!table){
+            res.status(400).json({message:`Table ${tableNumber} is not available`})
+            return
         }
-        const dateNow = new Date(dateTime)
-        const reservation = new DineInReservation(nextId++,customer,dateNow,numberOfGuest,table)
-        reservations.push(reservation)
-        reservation.confirm()
-        res.status(201).json({message:"reservationn created", reservation})
+        let customer = await Customer.findOne({phoneNumber})
+        if(!customer){
+            customer = new Customer({name,phoneNumber})
+            await customer.save()
+        }
+        const reservation = new Reservation({
+            customer:customer._id,
+            table:table._id,
+            dateTime,
+            numberOfGuest
+        })
+        await reservation.save()
+        table.isAvailable = false
+        await table.save()
+        res.status(201).json({message:`Reservation created`,reservation})
     } catch (error) {
         next(error)
     }
 }
-export const listReservation = (req:Request,res:Response,next:NextFunction):void=>{
+
+export const listReservations = async (req:Request,res:Response,next:NextFunction):Promise<void>=>{
     try {
-        res.status(200).json(reservations)
+        const reservations = await Reservation.find()
+        .populate("customer","name phoneNumber")
+        .populate("table", "tableNumber capacity isAvailable")
+
+    if(!reservations.length){
+        res.status(404).json({message:"No reservations found"})
+        return
+    }
+    res.status(200).json(reservations)
     } catch (error) {
         next(error)
     }

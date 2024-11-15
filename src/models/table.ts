@@ -1,25 +1,21 @@
-export class Table {
-    private tableNumber:number
-    private capacity: number
-    private isAvailable: boolean
-    constructor(tableNumber:number,capacity:number,isAvailable:boolean = true){
-        this.tableNumber = tableNumber
-        this.capacity = capacity
-        this.isAvailable = isAvailable
-    }
-    public getTableNumber():number{
-        return this.tableNumber
-    }
-    public getCapacity():number{
-        return this.capacity
-    }
-    public getIsAvailable():boolean{
-        return this.isAvailable
-    }
-    public markOccupied():void{
-        this.isAvailable = false
-    }
-    public markAvailable(): void{
-        this.isAvailable = true
-    }
+import mongoose, {Schema, Document} from "mongoose";
+export interface ITable extends Document{
+    tableNumber:number
+    capacity:number
+    isAvailable:boolean
 }
+const tableSchema:Schema = new Schema({
+    tableNumber:{
+        type: Number,
+        required:true
+    },
+    capacity:{
+        type:Number,
+        required:true
+    },
+    isAvailable:{
+        type:Boolean,
+        default:true
+    }
+})
+export default mongoose.model<ITable>("Table",tableSchema)

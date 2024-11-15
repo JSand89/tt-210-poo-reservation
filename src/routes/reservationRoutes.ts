@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { createReservation, listReservation } from "../controllers/reservationController";
+import { createReservation, listReservations } from "../controllers/reservationController";
 
 const router:Router = Router()
 
 router.post("/",createReservation)
-router.get("/",listReservation)
+router.get("/",listReservations)
 
 export default router
